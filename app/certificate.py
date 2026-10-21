@@ -1,7 +1,6 @@
 """Draws the dynamic text on top of certificate_bg.png (A4 landscape).
 
-The static branding (The Data & AI Guild logo, Founder Harish Cholleti, Community Manager
-Parinam Praphul, "Sponsored by Sparity") is part of certificate_bg.png itself.
+The static branding is part of certificate_bg.png itself.
 """
 from io import BytesIO
 from pathlib import Path
