@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+pyodbc
+python-dotenv
+python-multipart
+jinja2
+itsdangerous
+pillow
+reportlab
+openpyxl

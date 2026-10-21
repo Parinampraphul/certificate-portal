@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Get your certificate{% endblock %}
+{% block content %}
+<div class="card center">
+  <h1>Get your certificate</h1>
+  <p class="mut">{{ event.name }}</p>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+  {% if step == "email" %}
+    <form method="post" action="/claim/{{ slug }}">
+      <label>Registered email address</label>
+      <input type="email" name="email" value="{{ email }}" required autofocus placeholder="you@example.com">
+      <p><button type="submit">Continue</button></p>
+    </form>
+
+  {% else %}
+    <div class="ok">Email verified.</div>
+    <form method="post" action="/claim/{{ slug }}/download">
+      <label>Name on certificate</label>
+      {% if participant.name_locked %}
+        <input value="{{ participant.name }}" readonly>
+        <p class="mut">Your name is locked. You can download the same certificate again.</p>
+      {% else %}
+        <input name="full_name" value="{{ form_name }}" required maxlength="80" autofocus>
+        <p class="mut">Check the spelling. You can correct it <b>once</b>. It is locked permanently when you download.</p>
+      {% endif %}
+      <p class="mut">
+        {{ event.name }}<br>
+        {{ event.event_date|pdate }}{% if event.event_format %} &middot; {{ event.event_format }}{% endif %}{% if event.location %} &middot; {{ event.location }}{% endif %}
+      </p>
+      <p><button type="submit">Download certificate (PDF)</button></p>
+    </form>
+    <p class="mut"><a href="/claim/{{ slug }}/switch">Not you? Use a different email</a></p>
+  {% endif %}
+</div>
+{% endblock %}

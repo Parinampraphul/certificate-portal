@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Admin - Events{% endblock %}
+{% block nav %}<nav><a href="/admin">Events</a><a href="/admin/logout">Logout</a></nav>{% endblock %}
+{% block content %}
+{% if flash %}<div class="ok">{{ flash }}</div>{% endif %}
+<div class="card">
+  <h2>Create event &amp; generate certificate link</h2>
+  {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  {% if issues %}<div class="info"><b>Skipped rows:</b><br>{% for i in issues[:15] %}{{ i }}<br>{% endfor %}</div>{% endif %}
+  <form method="post" action="/admin/events" enctype="multipart/form-data">
+    <label>Event name</label>
+    <input name="name" required value="{{ form.get('name','') }}" placeholder="Zero to Hero on AI Agent Observability">
+    <div class="row">
+      <div><label>Participation date</label><input type="date" name="event_date" required value="{{ form.get('event_date', today) }}"></div>
+      <div><label>Certificate issue date</label><input type="date" name="issue_date" required value="{{ form.get('issue_date', today) }}"></div>
+    </div>
+    <div class="row">
+      <div><label>Event format</label><input name="event_format" value="{{ form.get('event_format','') }}" placeholder="In-person / Virtual / Hybrid"></div>
+      <div><label>Location</label><input name="location" value="{{ form.get('location','') }}" placeholder="Hyderabad"></div>
+    </div>
+    <div class="row">
+      <div><label>Participants file (.csv or .xlsx with name, email)</label><input type="file" name="file" accept=".csv,.xlsx"></div>
+      <div><label>Link valid for (hours)</label><input type="number" name="valid_hours" min="1" value="{{ form.get('valid_hours', default_hours) }}"></div>
+    </div>
+    <p class="mut">You can also upload or add participants later from the event page.</p>
+    <p><button type="submit">Submit &amp; generate link</button></p>
+  </form>
+</div>
+
+<div class="card">
+  <h2>All events</h2>
+  {% if not events %}<p class="mut">No events yet.</p>{% else %}
+  <table>
+    <tr><th>Event</th><th>Date</th><th>Participants</th><th>Claimed</th><th>Downloads</th><th>Link</th><th></th></tr>
+    {% for e in events %}{% set s = stats.get(e.id, {'total':0,'claimed':0,'downloads':0}) %}
+    <tr>
+      <td><b>{{ e.name }}</b></td>
+      <td>{{ e.event_date|pdate }}</td>
+      <td>{{ s.total }}</td><td>{{ s.claimed }}</td><td>{{ s.downloads }}</td>
+      <td>{% if e.link_is_valid %}<span class="badge b-on">Active</span><div class="mut">till {{ e.link_expires_at|ist }} IST</div>
+          {% else %}<span class="badge b-off">Expired</span>{% endif %}</td>
+      <td><a class="btn sm sec" href="/admin/events/{{ e.id }}">Open</a></td>
+    </tr>
+    {% endfor %}
+  </table>{% endif %}
+</div>
+{% endblock %}

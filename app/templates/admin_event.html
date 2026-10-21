@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ event.name }}{% endblock %}
+{% block nav %}<nav><a href="/admin">Events</a><a href="/admin/logout">Logout</a></nav>{% endblock %}
+{% block content %}
+{% if flash %}<div class="ok">{{ flash }}</div>{% endif %}
+<div class="card">
+  <h1>{{ event.name }}</h1>
+  <p class="mut">{{ event.event_date|pdate }}{% if event.event_format %} &middot; {{ event.event_format }}{% endif %}{% if event.location %} &middot; {{ event.location }}{% endif %}
+     &middot; Issue date: {{ event.issue_date|pdate }}</p>
+  <p><b>{{ stats.total }}</b> participants &middot; <b>{{ stats.claimed }}</b> claimed &middot; <b>{{ stats.downloads }}</b> downloads</p>
+  <h3>Shareable link
+    {% if event.link_is_valid %}<span class="badge b-on">Active</span>{% else %}<span class="badge b-off">Expired / disabled</span>{% endif %}</h3>
+  <div class="linkbox">
+    <input id="lnk" value="{{ link }}" readonly>
+    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('lnk').value);this.textContent='Copied!'">Copy</button>
+  </div>
+  <p class="mut">Expires: {{ event.link_expires_at|ist }} IST</p>
+  <form method="post" action="/admin/events/{{ event.id }}/extend" style="display:inline-flex;gap:8px;align-items:center">
+    <input type="number" name="hours" value="{{ default_hours }}" min="1" style="width:90px"> <span class="mut">hours from now</span>
+    <button class="sec btn sm" type="submit">Extend / reactivate</button>
+  </form>
+  <form method="post" action="/admin/events/{{ event.id }}/disable" style="display:inline;margin-left:10px">
+    <button class="btn sm danger" type="submit">Disable link</button>
+  </form>
+</div>
+
+<div class="card">
+  <details><summary>Edit event details</summary>
+  <form method="post" action="/admin/events/{{ event.id }}/edit">
+    <label>Event name</label><input name="name" required value="{{ event.name }}">
+    <div class="row">
+      <div><label>Participation date</label><input type="date" name="event_date" required value="{{ event.event_date.isoformat() }}"></div>
+      <div><label>Issue date</label><input type="date" name="issue_date" required value="{{ event.issue_date.isoformat() }}"></div>
+    </div>
+    <div class="row">
+      <div><label>Format</label><input name="event_format" value="{{ event.event_format }}"></div>
+      <div><label>Location</label><input name="location" value="{{ event.location }}"></div>
+    </div>
+    <p><button type="submit">Save changes</button></p>
+  </form>
+  <form method="post" action="/admin/events/{{ event.id }}/delete" onsubmit="return confirm('Delete this event, its participants and logs permanently?')">
+    <button class="btn sm danger" type="submit">Delete event</button>
+  </form>
+  </details>
+</div>
+
+<div class="card">
+  <h2>Participants ({{ participants|length }})</h2>
+  <form method="post" action="/admin/events/{{ event.id }}/participants/upload" enctype="multipart/form-data" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input type="file" name="file" accept=".csv,.xlsx" required style="flex:1;min-width:220px">
+    <button class="btn sm" type="submit">Upload more (CSV/XLSX)</button>
+  </form>
+  <form method="post" action="/admin/events/{{ event.id }}/participants/add" style="display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap">
+    <input name="name" placeholder="Full name" required style="flex:1;min-width:160px">
+    <input name="email" type="email" placeholder="Email" required style="flex:1;min-width:160px">
+    <button class="btn sm sec" type="submit">Add one</button>
+  </form>
+  <table>
+    <tr><th>Name</th><th>Email</th><th>Certificate ID</th><th>Name</th><th>Downloads</th><th>Last download</th><th></th></tr>
+    {% for p in participants %}
+    <tr><td>{{ p.name }}</td><td>{{ p.email }}</td><td>{{ p.cert_no }}</td>
+        <td>{% if p.name_locked %}<span class="badge b-off">Locked</span>{% else %}<span class="badge b-on">Open</span>{% endif %}</td>
+        <td>{{ p.download_count or 0 }}</td><td>{{ p.last_downloaded_at|ist }}</td>
+        <td style="white-space:nowrap">
+          <a class="btn sm sec" href="/admin/events/{{ event.id }}/certificate/{{ p.id }}">PDF</a>
+          {% if p.name_locked %}<form method="post" action="/admin/events/{{ event.id }}/participants/{{ p.id }}/unlock" style="display:inline"><button class="btn sm sec" type="submit">Unlock</button></form>{% endif %}
+          <form method="post" action="/admin/events/{{ event.id }}/participants/{{ p.id }}/delete" style="display:inline" onsubmit="return confirm('Remove this participant?')"><button class="btn sm danger" type="submit">Remove</button></form>
+        </td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <details><summary>Activity log (latest 200)</summary>
+  <table>
+    <tr><th>Time (IST)</th><th>Action</th><th>Participant</th><th>Email entered</th><th>Detail</th><th>IP</th></tr>
+    {% for log, pname in logs %}
+    <tr><td>{{ log.created_at|ist }}</td><td>{{ log.action }}</td><td>{{ pname or '-' }}</td>
+        <td>{{ log.email_entered or '-' }}</td><td>{{ log.detail or '' }}</td><td>{{ log.ip or '' }}</td></tr>
+    {% endfor %}
+  </table></details>
+</div>
+{% endblock %}
